@@ -47,7 +47,7 @@ def enviar_correo_alerta(asunto, mensaje, destino):
     # Usamos variables de entorno para proteger las credenciales
     smtp_user = os.getenv("SMTP_USER")      # ej: saimoljimenez@gmail.com
     smtp_pass = os.getenv("SMTP_PASSWORD")  # ej: tu nueva contraseña de aplicación
-    from_name = os.getenv("SMTP_FROM_NAME", "MediSync - Alertas")
+    from_name = os.getenv("SMTP_FROM_NAME", "Alertas")
     
     if not smtp_user or not smtp_pass:
         raise ValueError("Faltan las credenciales SMTP en las variables de entorno")
