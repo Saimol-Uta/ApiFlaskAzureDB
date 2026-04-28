@@ -105,7 +105,7 @@ def debug_env():
         "DB_USERNAME": os.getenv("DB_USERNAME"),
         "DB_PASSWORD_EXISTS": bool(os.getenv("DB_PASSWORD")),
         "DB_PORT": os.getenv("DB_PORT"),
-        "BREVO_API_KEY_EXISTS": bool(os.getenv("BREVO_API_KEY")),
+        "BREVO_API_KEY_EXISTS": os.getenv("BREVO_API_KEY"),
         "EMAIL_USER": os.getenv("EMAIL_USER", "saimoljimenez@gmail.com")
     })
 
