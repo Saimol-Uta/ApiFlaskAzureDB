@@ -42,15 +42,9 @@ def get_connection():
 # --- NUEVA FUNCIÓN PARA ENVIAR CORREOS VÍA API HTTP DE BREVO ---
 def enviar_correo_alerta(asunto, mensaje, destino):
     # Obtenemos la API Key desde las variables de entorno
-    def enviar_correo_alerta(asunto, mensaje, destino):
     api_key = os.getenv("BREVO_API_KEY")
     
-    # Agrega esto temporalmente
-    print(f"[DEBUG] API Key presente: {bool(api_key)}, longitud: {len(api_key) if api_key else 0}")
-    
-    if not api_key:
-        raise ValueError("Falta BREVO_API_KEY en las variables de entorno")
-
+    # Usamos tu correo verificado en Brevo
     email_user = os.getenv("EMAIL_USER", "saimoljimenez@gmail.com")
     from_name = os.getenv("SMTP_FROM_NAME", "MediSync - Alertas")
 
@@ -111,7 +105,7 @@ def debug_env():
         "DB_USERNAME": os.getenv("DB_USERNAME"),
         "DB_PASSWORD_EXISTS": bool(os.getenv("DB_PASSWORD")),
         "DB_PORT": os.getenv("DB_PORT"),
-        "BREVO_API_KEY_EXISTS": os.getenv("BREVO_API_KEY"),
+        "BREVO_API_KEY_EXISTS": bool(os.getenv("BREVO_API_KEY")),
         "EMAIL_USER": os.getenv("EMAIL_USER", "saimoljimenez@gmail.com")
     })
 
