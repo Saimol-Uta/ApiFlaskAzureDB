@@ -64,7 +64,7 @@ def enviar_correo_alerta(asunto, mensaje, destino):
     # Conexión al servidor SMTP de Gmail usando SSL Directo (Puerto 465)
     try:
         # Agregamos un timeout de 10 segundos para evitar el colapso de Gunicorn si hay problemas de red
-        server = smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10)
+        server = smtplib.SMTP_SSL("smtp.gmail.com", 587, timeout=10)
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
