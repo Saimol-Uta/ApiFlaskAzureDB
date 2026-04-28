@@ -1,8 +1,5 @@
 import os
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-
+import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS  # Importante para que WordPress pueda hacer la petición
 from mssql_python import connect
@@ -42,35 +39,54 @@ def get_connection():
     return connect(connection_string)
 
 
-# --- NUEVA FUNCIÓN PARA ENVIAR CORREOS (ACTUALIZADA PARA RENDER) ---
+# --- NUEVA FUNCIÓN PARA ENVIAR CORREOS VÍA API HTTP DE BREVO ---
 def enviar_correo_alerta(asunto, mensaje, destino):
-    # Usamos variables de entorno para proteger las credenciales
-    smtp_user = os.getenv("SMTP_USER")      
-    smtp_pass = os.getenv("SMTP_PASSWORD")  
-    from_name = os.getenv("SMTP_FROM_NAME", "MediSync - Alertas")
+    # Obtenemos la API Key desde las variables de entorno
+    api_key = os.getenv("BREVO_API_KEY")
     
-    if not smtp_user or not smtp_pass:
-        raise ValueError("Faltan las credenciales SMTP en las variables de entorno")
+    # Usamos tu correo verificado en Brevo
+    email_user = os.getenv("EMAIL_USER", "saimoljimenez@gmail.com")
+    from_name = os.getenv("SMTP_FROM_NAME", "MediSync - Alertas")
 
-    # Configuración del mensaje
-    msg = MIMEMultipart()
-    msg['From'] = f"{from_name} <{smtp_user}>"
-    msg['To'] = destino
-    msg['Subject'] = asunto
+    if not api_key:
+        raise ValueError("Falta BREVO_API_KEY en las variables de entorno")
 
-    # Adjuntar el cuerpo del mensaje
-    msg.attach(MIMEText(mensaje, 'plain'))
+    url = "https://api.brevo.com/v3/smtp/email"
+    
+    # Cabeceras de la petición HTTP
+    headers = {
+        "accept": "application/json",
+        "api-key": api_key,
+        "content-type": "application/json"
+    }
+    
+    # Cuerpo de la petición (Payload) en formato JSON
+    payload = {
+        "sender": {
+            "name": from_name,
+            "email": email_user
+        },
+        "to": [
+            {
+                "email": destino
+            }
+        ],
+        "subject": asunto,
+        "textContent": mensaje
+    }
 
-    # Conexión al servidor SMTP de Gmail usando SSL Directo (Puerto 465)
     try:
-        # Agregamos un timeout de 10 segundos para evitar el colapso de Gunicorn si hay problemas de red
-        server = smtplib.SMTP_SSL("smtp.gmail.com", 587, timeout=10)
-        server.login(smtp_user, smtp_pass)
-        server.send_message(msg)
-        server.quit()
-    except Exception as e:
-        raise Exception(f"Error en el servidor SMTP: {str(e)}")
-# -----------------------------------------
+        # Hacemos la petición POST a Brevo con un timeout de 10 segundos
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        
+        # Brevo devuelve 201 si el correo fue aceptado y puesto en cola correctamente
+        if response.status_code not in [200, 201, 202]:
+            raise RuntimeError(f"Error de Brevo API: {response.status_code} - {response.text}")
+            
+    except requests.exceptions.RequestException as e:
+        # Capturamos cualquier error de red HTTP (no SMTP)
+        raise RuntimeError(f"Error de red al conectar con Brevo: {e}")
+# ---------------------------------------------------------------
 
 
 @app.route("/")
@@ -89,8 +105,8 @@ def debug_env():
         "DB_USERNAME": os.getenv("DB_USERNAME"),
         "DB_PASSWORD_EXISTS": bool(os.getenv("DB_PASSWORD")),
         "DB_PORT": os.getenv("DB_PORT"),
-        "SMTP_USER_EXISTS": bool(os.getenv("SMTP_USER")),
-        "SMTP_PASSWORD_EXISTS": bool(os.getenv("SMTP_PASSWORD"))
+        "BREVO_API_KEY_EXISTS": bool(os.getenv("BREVO_API_KEY")),
+        "EMAIL_USER": os.getenv("EMAIL_USER", "saimoljimenez@gmail.com")
     })
 
 
@@ -146,7 +162,7 @@ def enviar_alerta():
 
         return jsonify({
             "success": True,
-            "message": "Correo enviado correctamente"
+            "message": "Correo enviado correctamente vía Brevo"
         })
 
     except Exception as e:
