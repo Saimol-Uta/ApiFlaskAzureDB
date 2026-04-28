@@ -42,12 +42,12 @@ def get_connection():
     return connect(connection_string)
 
 
-# --- NUEVA FUNCIÓN PARA ENVIAR CORREOS ---
+# --- NUEVA FUNCIÓN PARA ENVIAR CORREOS (ACTUALIZADA PARA RENDER) ---
 def enviar_correo_alerta(asunto, mensaje, destino):
     # Usamos variables de entorno para proteger las credenciales
-    smtp_user = os.getenv("SMTP_USER")      # ej: saimoljimenez@gmail.com
-    smtp_pass = os.getenv("SMTP_PASSWORD")  # ej: tu nueva contraseña de aplicación
-    from_name = os.getenv("SMTP_FROM_NAME", "Alertas")
+    smtp_user = os.getenv("SMTP_USER")      
+    smtp_pass = os.getenv("SMTP_PASSWORD")  
+    from_name = os.getenv("SMTP_FROM_NAME", "MediSync - Alertas")
     
     if not smtp_user or not smtp_pass:
         raise ValueError("Faltan las credenciales SMTP en las variables de entorno")
@@ -61,10 +61,10 @@ def enviar_correo_alerta(asunto, mensaje, destino):
     # Adjuntar el cuerpo del mensaje
     msg.attach(MIMEText(mensaje, 'plain'))
 
-    # Conexión al servidor SMTP de Gmail
+    # Conexión al servidor SMTP de Gmail usando SSL Directo (Puerto 465)
     try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()  # Activar encriptación SSL/TLS
+        # Agregamos un timeout de 10 segundos para evitar el colapso de Gunicorn si hay problemas de red
+        server = smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10)
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
